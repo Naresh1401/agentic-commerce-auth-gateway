@@ -1,0 +1,16 @@
+{
+  "id": "02",
+  "repo": "agentic-commerce-auth-gateway",
+  "title": "API Gateway + Authentication",
+  "summary": "Mock OAuth2/JWT, partner API keys, RBAC, rate limit simulation, audit logs, and PII masking.",
+  "copy": [
+    "backend",
+    "pytest.ini",
+    ".env.example"
+  ],
+  "extra_tests": {
+    "tests/test_auth_gateway.py": "\n                from fastapi.testclient import TestClient\n                from app.main import app\n\n                client = TestClient(app, raise_server_exceptions=False)\n\n                def test_login_and_me():\n                    token = client.post('/auth/login', json={'username': 'demo_customer_001', 'role': 'customer'}).json()['access_token']\n                    response = client.get('/auth/me', headers={'Authorization': f'Bearer {token}'})\n                    assert response.status_code == 200\n                    assert response.json()['role'] == 'customer'\n\n                def test_partner_cannot_call_admin_audit_log():\n                    response = client.get('/auth/audit-log', headers={'X-API-Key': 'demo_partner_key'})\n                    assert response.status_code == 403\n                    assert response.json()['error']['code'] == 'RBAC_DENIED'\n            "
+  },
+  "verify": "python3.11 -m pytest backend/tests tests",
+  "run": "cd backend && python3.11 -m uvicorn app.main:app --reload --port 8000"
+}
